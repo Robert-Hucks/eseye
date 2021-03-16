@@ -49,7 +49,7 @@ class GuzzleFetcher implements FetcherInterface
 {
 
     /**
-     * @var string
+     * @var \Seat\Eseye\Containers\EsiAuthentication
      */
     protected $authentication;
 
