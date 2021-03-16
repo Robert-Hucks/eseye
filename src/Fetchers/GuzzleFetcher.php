@@ -405,7 +405,7 @@ class GuzzleFetcher implements FetcherInterface
     public function setAuthenticationScopes()
     {
 
-        $jws_token = $this->verifyToken($this->authentication->access_token);
+        $jws_token = $this->verifyToken($this->getToken());
 
         $this->authentication->scopes = \explode(',', $jws_token['scp']);
     }
