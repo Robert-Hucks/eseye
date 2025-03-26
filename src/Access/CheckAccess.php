@@ -33,9 +33,9 @@ class CheckAccess implements AccessInterface
 {
 
     /**
-     * @var array
+     * @var array<string, array<string, string>> $scope_map
      */
-    protected $scope_map = [
+    protected array $scope_map = [
         'get'    => [
 
             // 'meta' URI's. see: https://esi.evetech.net/ui/?version=meta
@@ -262,11 +262,7 @@ class CheckAccess implements AccessInterface
     ];
 
     /**
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  array  $scopes
-     * @return bool|mixed
-     *
+     * @param array<string> $scopes
      * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
      */
     public function can(string $method, string $uri, array $scopes): bool

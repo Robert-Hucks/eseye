@@ -29,6 +29,13 @@ use Seat\Eseye\Traits\ValidatesContainers;
  * Class EsiAuthentication.
  *
  * @package Seat\Eseye\Containers
+ *
+ * @property string|null $client_id
+ * @property string|null $secret
+ * @property string $access_token
+ * @property string|null $refresh_token
+ * @property string $token_expires
+ * @property array<string> $scopes
  */
 class EsiAuthentication extends AbstractArrayAccess
 {
@@ -36,9 +43,9 @@ class EsiAuthentication extends AbstractArrayAccess
     use ConstructsContainers, ValidatesContainers;
 
     /**
-     * @var array
+     * @var array<string, mixed> $data
      */
-    protected $data = [
+    protected array $data = [
         'client_id'     => null,
         'secret'        => null,
         'access_token'  => '_',

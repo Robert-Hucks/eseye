@@ -36,25 +36,17 @@ class FileCache implements CacheInterface
 
     use HashesStrings;
 
-    /**
-     * @var string
-     */
-    protected $cache_path;
+    protected string $cache_path;
 
-    /**
-     * @var string
-     */
-    protected $results_filename = 'results.cache';
+    protected string $results_filename = 'results.cache';
 
     /**
      * FileCache constructor.
      *
-     * @throws \Seat\Eseye\Exceptions\CachePathException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws CachePathException
      */
     public function __construct()
     {
-
         $this->cache_path = Configuration::getInstance()
             ->file_cache_location;
 
@@ -63,13 +55,10 @@ class FileCache implements CacheInterface
     }
 
     /**
-     * @return bool
-     *
-     * @throws \Seat\Eseye\Exceptions\CachePathException
+     * @throws CachePathException
      */
-    public function checkCacheDirectory()
+    public function checkCacheDirectory(): bool
     {
-
         // Ensure the cache path exists
         if (! is_dir($this->cache_path) &&
             ! @mkdir($this->cache_path, 0775, true)
@@ -91,22 +80,12 @@ class FileCache implements CacheInterface
         return true;
     }
 
-    /**
-     * @return string
-     */
     public function getCachePath(): string
     {
-
         return $this->cache_path;
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @param  \Seat\Eseye\Containers\EsiResponse  $data
-     * @return mixed|void
-     */
-    public function set(string $uri, string $query, EsiResponse $data)
+    public function set(string $uri, string $query, EsiResponse $data): mixed
     {
 
         $path = $this->buildRelativePath($this->safePath($uri), $query);
@@ -117,13 +96,10 @@ class FileCache implements CacheInterface
 
         // Dump the contents to file
         file_put_contents($path . $this->results_filename, serialize($data));
+
+        return true;
     }
 
-    /**
-     * @param  string  $path
-     * @param  string  $query
-     * @return string
-     */
     public function buildRelativePath(string $path, string $query = ''): string
     {
 
@@ -135,21 +111,12 @@ class FileCache implements CacheInterface
             '/' . $query . '/';
     }
 
-    /**
-     * @param  string  $uri
-     * @return string
-     */
     public function safePath(string $uri): string
     {
 
         return preg_replace('/[^A-Za-z0-9\/]/', '', $uri);
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return bool|mixed
-     */
     public function has(string $uri, string $query = ''): bool
     {
 
@@ -159,12 +126,7 @@ class FileCache implements CacheInterface
         return false;
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return \Seat\Eseye\Containers\EsiResponse|bool
-     */
-    public function get(string $uri, string $query = '')
+    public function get(string $uri, string $query = ''): EsiResponse|bool
     {
 
         $path = $this->buildRelativePath($this->safePath($uri), $query);
@@ -188,17 +150,14 @@ class FileCache implements CacheInterface
         return $data;
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return void
-     */
-    public function forget(string $uri, string $query = '')
+    public function forget(string $uri, string $query = ''): mixed
     {
 
         $path = $this->buildRelativePath($uri, $query);
         $cache_file_path = $path . $this->results_filename;
 
         @unlink($cache_file_path);
+
+        return true;
     }
 }

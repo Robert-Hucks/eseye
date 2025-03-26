@@ -68,17 +68,12 @@ class RedisCache implements CacheInterface
         $this->redis = $redis;
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @param  \Seat\Eseye\Containers\EsiResponse  $data
-     * @return void
-     */
-    public function set(string $uri, string $query, EsiResponse $data)
+    public function set(string $uri, string $query, EsiResponse $data): mixed
     {
-
         $ttl = $data->expires()->timestamp - Carbon::now('UTC')->timestamp;
         $this->redis->setex($this->buildCacheKey($uri, $query), $ttl > 0 ? $ttl : 10, serialize($data));
+
+        return true;
     }
 
     /**
@@ -95,12 +90,7 @@ class RedisCache implements CacheInterface
         return $this->hashString($uri . $query);
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return \Seat\Eseye\Containers\EsiResponse|bool
-     */
-    public function get(string $uri, string $query = '')
+    public function get(string $uri, string $query = ''): EsiResponse|bool
     {
 
         if (! $this->has($uri, $query))
@@ -120,23 +110,12 @@ class RedisCache implements CacheInterface
         return $data;
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return bool|mixed
-     */
     public function has(string $uri, string $query = ''): bool
     {
-
-        return $this->redis->exists($this->buildCacheKey($uri, $query));
+        return (bool) $this->redis->exists($this->buildCacheKey($uri, $query));
     }
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return mixed
-     */
-    public function forget(string $uri, string $query = '')
+    public function forget(string $uri, string $query = ''): mixed
     {
 
         return $this->redis->del([$this->buildCacheKey($uri, $query)]);

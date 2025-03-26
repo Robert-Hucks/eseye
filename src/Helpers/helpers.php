@@ -20,20 +20,19 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use Carbon\Carbon;
+
 if (! function_exists('carbon')) {
 
     /**
      * A helper to get a fresh instance of Carbon.
-     *
-     * @param  null  $data
-     * @return \Carbon\Carbon
      */
-    function carbon($data = null)
+    function carbon(string|null $data = null): Carbon
     {
 
         if (! is_null($data))
-            return new \Carbon\Carbon($data);
+            return new Carbon($data);
 
-        return new \Carbon\Carbon;
+        return new Carbon();
     }
 }

@@ -30,10 +30,7 @@ namespace Seat\Eseye\Access;
 interface AccessInterface
 {
     /**
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  array  $scopes
-     * @return bool|mixed
+     * @param array<string> $scopes
      */
     public function can(string $method, string $uri, array $scopes): bool;
 }

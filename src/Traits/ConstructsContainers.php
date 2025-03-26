@@ -39,7 +39,7 @@ trait ConstructsContainers
      * the incoming array to ensure that only the keys in
      * the data property of the container is set.
      *
-     * @param  array|null  $data
+     * @param  array<string, mixed>|null  $data
      *
      * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
      */

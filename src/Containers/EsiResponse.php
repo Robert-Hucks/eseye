@@ -29,67 +29,39 @@ use Carbon\Carbon;
  * Class EsiResponse.
  *
  * @package Seat\Eseye\Containers
+ *
+ * @extends ArrayObject<string, mixed>
  */
 class EsiResponse extends ArrayObject
 {
+    public string $raw;
 
     /**
-     * @var string
+     * @var array<string, mixed> $headers
      */
-    public $raw;
+    public array $headers;
 
     /**
-     * @var array
+     * @var array<string, mixed> $raw_headers
      */
-    public $headers;
+    public array $raw_headers;
 
-    /**
-     * @var array
-     */
-    public $raw_headers;
+    public int|null $error_limit = null;
 
-    /**
-     * @var int
-     */
-    public $error_limit;
+    public int|null $pages = null;
 
-    /**
-     * @var int
-     */
-    public $pages;
+    protected string $expires_at;
 
-    /**
-     * @var array
-     */
-    protected $expires_at;
+    protected int $response_code;
 
-    /**
-     * @var string
-     */
-    protected $response_code;
+    protected string|null $error_message = null;
 
-    /**
-     * @var mixed
-     */
-    protected $error_message;
-
-    /**
-     * @var mixed
-     */
-    protected $optional_return;
-
-    /**
-     * @var bool
-     */
-    protected $cached_load = false;
+    protected bool $cached_load = false;
 
     /**
      * EsiResponse constructor.
      *
-     * @param  string  $data
-     * @param  array  $headers
-     * @param  string  $expires
-     * @param  int  $response_code
+     * @param  array<string, mixed>  $headers
      */
     public function __construct(
         string $data, array $headers, string $expires, int $response_code)
@@ -136,9 +108,9 @@ class EsiResponse extends ArrayObject
      * and X-Pages are automatically mapped to properties in this
      * object.
      *
-     * @param  array  $headers
+     * @param  array<array, mixed>  $headers
      */
-    private function parseHeaders(array $headers)
+    private function parseHeaders(array $headers): void
     {
 
         // Set the raw headers as we got from the constructor.
@@ -169,13 +141,9 @@ class EsiResponse extends ArrayObject
     /**
      * A helper method when a key might not exist within the
      * response object.
-     *
-     * @param  string  $index
-     * @return mixed
      */
-    public function optional(string $index)
+    public function optional(string $index): mixed
     {
-
         if (! $this->offsetExists($index))
             return null;
 
@@ -191,12 +159,9 @@ class EsiResponse extends ArrayObject
      * time is converted to the timezone in which the expiry time
      * is recorded. The resultant local time is then checked to
      * ensure that the expiry is not less than local time.
-     *
-     * @return bool
      */
     public function expired(): bool
     {
-
         if ($this->expires()->lte(
             carbon()->now($this->expires()->timezoneName))
         )
@@ -205,56 +170,32 @@ class EsiResponse extends ArrayObject
         return false;
     }
 
-    /**
-     * @return \Carbon\Carbon
-     */
     public function expires(): Carbon
     {
-
         return carbon($this->expires_at);
     }
 
-    /**
-     * @return null|string
-     */
-    public function error()
+    public function error(): string|null
     {
-
         return $this->error_message;
     }
 
-    /**
-     * @return int
-     */
     public function getErrorCode(): int
     {
-
         return $this->response_code;
     }
 
-    /**
-     * @return bool
-     */
     public function setIsCachedLoad(): bool
     {
-
         return $this->cached_load = true;
     }
 
-    /**
-     * @return bool
-     */
     public function isCachedLoad(): bool
     {
-
         return $this->cached_load;
     }
 
-    /**
-     * @param  string  $name
-     * @return bool
-     */
-    public function hasHeader(string $name)
+    public function hasHeader(string $name): bool
     {
         // turn headers into case insensitive array
         $key_map = array_change_key_case($this->headers, CASE_LOWER);
@@ -263,11 +204,7 @@ class EsiResponse extends ArrayObject
         return array_key_exists(strtolower($name), $key_map);
     }
 
-    /**
-     * @param  string  $name
-     * @return mixed|null
-     */
-    public function getHeader(string $name)
+    public function getHeader(string $name): mixed
     {
         // turn header name into case insensitive
         $insensitive_key = strtolower($name);
@@ -282,10 +219,7 @@ class EsiResponse extends ArrayObject
         return null;
     }
 
-    /**
-     * @param  \Carbon\Carbon  $date
-     */
-    public function setExpires(Carbon $date)
+    public function setExpires(Carbon $date): void
     {
         // turn headers into case insensitive array
         $key_map = array_change_key_case($this->headers, CASE_LOWER);

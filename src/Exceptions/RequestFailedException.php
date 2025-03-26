@@ -57,7 +57,7 @@ class RequestFailedException extends Exception
 
         // Finish constructing the exception
         parent::__construct(
-            $this->getError(),
+            $this->getError() ?? '',
             $this->getEsiResponse()->getErrorCode(),
             $exception->getPrevious()
         );
@@ -66,7 +66,7 @@ class RequestFailedException extends Exception
     /**
      * @return null|string
      */
-    public function getError()
+    public function getError(): string|null
     {
 
         return $this->getEsiResponse()->error();

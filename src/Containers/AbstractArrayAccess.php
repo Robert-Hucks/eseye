@@ -26,69 +26,43 @@ namespace Seat\Eseye\Containers;
  * Class AbstractArrayAccess.
  *
  * @package Seat\Eseye\Containers
+ *
+ * @implements \ArrayAccess<string, mixed>
  */
 abstract class AbstractArrayAccess implements \ArrayAccess
 {
 
     /**
-     * @var
+     * @var array<string, mixed> $data
      */
-    protected $data;
+    protected array $data;
 
-    /**
-     * @param  mixed  $offset
-     * @return bool
-     */
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
-
         return array_key_exists($offset, $this->data);
     }
 
-    /**
-     * @param  mixed  $offset
-     * @return mixed
-     */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
-
         return $this->data[$offset];
     }
 
-    /**
-     * @param  mixed  $offset
-     * @param  mixed  $value
-     */
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
-
         $this->data[$offset] = $value;
     }
 
-    /**
-     * @param  mixed  $offset
-     */
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
-
         unset($this->data[$offset]);
     }
 
-    /**
-     * @param $key
-     * @return mixed
-     */
-    public function __get($key)
+    public function __get(mixed $key): mixed
     {
-
         return $this[$key];
     }
 
-    /**
-     * @param $key
-     * @param $val
-     */
-    public function __set($key, $val)
+    public function __set(mixed $key, mixed $val): void
     {
 
         $this[$key] = $val;

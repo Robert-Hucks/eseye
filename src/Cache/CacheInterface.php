@@ -31,32 +31,11 @@ use Seat\Eseye\Containers\EsiResponse;
  */
 interface CacheInterface
 {
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @param  \Seat\Eseye\Containers\EsiResponse  $data
-     * @return mixed
-     */
-    public function set(string $uri, string $query, EsiResponse $data);
+    public function set(string $uri, string $query, EsiResponse $data): mixed;
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return \Seat\Eseye\Containers\EsiResponse|bool
-     */
-    public function get(string $uri, string $query = '');
+    public function get(string $uri, string $query = ''): EsiResponse|bool;
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return mixed
-     */
-    public function forget(string $uri, string $query = '');
+    public function forget(string $uri, string $query = ''): mixed;
 
-    /**
-     * @param  string  $uri
-     * @param  string  $query
-     * @return bool|mixed
-     */
     public function has(string $uri, string $query = ''): bool;
 }

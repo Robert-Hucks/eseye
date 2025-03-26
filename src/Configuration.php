@@ -30,71 +30,45 @@ use Seat\Eseye\Log\LogInterface;
 /**
  * Class Configuration.
  *
+ * @mixin EsiConfiguration
+ *
  * @package Seat\Eseye
  */
 class Configuration
 {
+    private static Configuration|null $instance = null;
 
-    /**
-     * @var Configuration
-     */
-    private static $instance;
+    protected LogInterface|null $logger = null;
 
-    /**
-     * @var LogInterface
-     */
-    protected $logger;
+    protected CacheInterface|null $cache = null;
 
-    /**
-     * @var CacheInterface
-     */
-    protected $cache;
-
-    /**
-     * @var EsiConfiguration
-     */
-    protected $configuration;
+    protected EsiConfiguration $configuration;
 
     /**
      * Configuration constructor.
-     *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
      */
     public function __construct()
     {
-
-        $this->configuration = new EsiConfiguration;
+        $this->configuration = new EsiConfiguration();
     }
 
-    /**
-     * @return \Seat\Eseye\Configuration
-     *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
-     */
     public static function getInstance(): self
     {
-
         if (is_null(self::$instance))
             self::$instance = new self();
 
         return self::$instance;
     }
 
-    /**
-     * @return \Seat\Eseye\Containers\EsiConfiguration
-     */
-    public function getConfiguration()
+    public function getConfiguration(): EsiConfiguration
     {
-
         return $this->configuration;
     }
 
     /**
-     * @param  \Seat\Eseye\Containers\EsiConfiguration  $configuration
-     *
-     * @throws \Seat\Eseye\Exceptions\InvalidConfigurationException
+     * @throws InvalidConfigurationException
      */
-    public function setConfiguration(EsiConfiguration $configuration)
+    public function setConfiguration(EsiConfiguration $configuration): void
     {
 
         if (! $configuration->valid())
@@ -104,24 +78,16 @@ class Configuration
         $this->configuration = $configuration;
     }
 
-    /**
-     * @return \Seat\Eseye\Log\LogInterface
-     */
     public function getLogger(): LogInterface
     {
-
         if (! $this->logger)
             $this->logger = new $this->configuration->logger;
 
         return $this->logger;
     }
 
-    /**
-     * @return \Seat\Eseye\Cache\CacheInterface
-     */
     public function getCache(): CacheInterface
     {
-
         if (! $this->cache)
             $this->cache = new $this->configuration->cache;
 
@@ -131,24 +97,15 @@ class Configuration
     /**
      * Magic method to get the configuration from the configuration
      * property.
-     *
-     * @param $name
-     * @return mixed
      */
-    public function __get(string $name)
+    public function __get(string $name): mixed
     {
-
         return $this->configuration->$name;
     }
 
-    /**
-     * @param  string  $name
-     * @param  string  $value
-     * @return string
-     */
-    public function __set(string $name, string $value)
+    public function __set(string $name, string $value): void
     {
 
-        return $this->configuration->$name = $value;
+        $this->configuration->$name = $value;
     }
 }

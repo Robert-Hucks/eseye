@@ -23,6 +23,9 @@
 namespace Seat\Eseye\Fetchers;
 
 use Seat\Eseye\Containers\EsiResponse;
+use Seat\Eseye\Exceptions\InvalidAuthenticationException;
+use Seat\Eseye\Exceptions\InvalidContainerDataException;
+use Seat\Eseye\Exceptions\RequestFailedException;
 
 /**
  * Interface FetcherInterface.
@@ -32,20 +35,17 @@ use Seat\Eseye\Containers\EsiResponse;
 interface FetcherInterface
 {
     /**
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  array  $body
-     * @param  array  $headers
-     * @return \Seat\Eseye\Containers\EsiResponse
+     * @param  array<mixed>  $body
+     * @param  array<string, mixed>  $headers
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidAuthenticationException
+     * @throws RequestFailedException
+     * @throws InvalidContainerDataException
      */
     public function call(string $method, string $uri, array $body, array $headers = []): EsiResponse;
 
     /**
-     * @return array
+     * @return array<string>
      */
     public function getAuthenticationScopes(): array;
 }

@@ -22,8 +22,10 @@
 
 namespace Seat\Eseye\Fetchers;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
@@ -39,7 +41,9 @@ use Seat\Eseye\Containers\EsiAuthentication;
 use Seat\Eseye\Containers\EsiResponse;
 use Seat\Eseye\Eseye;
 use Seat\Eseye\Exceptions\InvalidAuthenticationException;
+use Seat\Eseye\Exceptions\InvalidContainerDataException;
 use Seat\Eseye\Exceptions\RequestFailedException;
+use Seat\Eseye\Log\LogInterface;
 
 /**
  * Class GuzzleFetcher.
@@ -48,57 +52,42 @@ use Seat\Eseye\Exceptions\RequestFailedException;
  */
 class GuzzleFetcher implements FetcherInterface
 {
+    protected EsiAuthentication|null $authentication = null;
 
-    /**
-     * @var string
-     */
-    protected $authentication;
+    protected Client|null $client = null;
 
-    /**
-     * @var \GuzzleHttp\Client
-     */
-    protected $client;
+    protected LogInterface $logger;
 
-    /**
-     * @var \Seat\Eseye\Log\LogInterface
-     */
-    protected $logger;
-
-    /**
-     * @var string
-     */
-    protected $sso_base;
+    protected string $sso_base;
 
     /**
      * EseyeFetcher constructor.
      *
-     * @param  \Seat\Eseye\Containers\EsiAuthentication  $authentication
-     *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidContainerDataException
      */
-    public function __construct(EsiAuthentication $authentication = null)
+    public function __construct(EsiAuthentication|null $authentication = null)
     {
 
         $this->authentication = $authentication;
 
         // Setup the logger
         $this->logger = Configuration::getInstance()->getLogger();
-        $this->sso_base = sprintf('%s://%s:%d/v2/oauth',
+        $this->sso_base = sprintf(
+            '%s://%s:%d/v2/oauth',
             Configuration::getInstance()->sso_scheme,
             Configuration::getInstance()->sso_host,
-            Configuration::getInstance()->sso_port);
+            Configuration::getInstance()->sso_port,
+        );
     }
 
     /**
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  array  $body
-     * @param  array  $headers
-     * @return \Seat\Eseye\Containers\EsiResponse
+     * @param  array<mixed>  $body
+     * @param  array<string, mixed>  $headers
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidAuthenticationException
+     * @throws RequestFailedException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
     public function call(
         string $method, string $uri, array $body, array $headers = []): EsiResponse
@@ -114,25 +103,22 @@ class GuzzleFetcher implements FetcherInterface
         return $this->httpRequest($method, $uri, $headers, $body);
     }
 
-    /**
-     * @return \Seat\Eseye\Containers\EsiAuthentication|null
-     */
-    public function getAuthentication()
+    public function getAuthentication(): EsiAuthentication|null
     {
-
         return $this->authentication;
     }
 
     /**
-     * @param  \Seat\Eseye\Containers\EsiAuthentication  $authentication
+     * @param EsiAuthentication $authentication
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
+     * @throws InvalidAuthenticationException
      */
-    public function setAuthentication(EsiAuthentication $authentication)
+    public function setAuthentication(EsiAuthentication $authentication): void
     {
 
-        if (! $authentication->valid())
+        if (! $authentication->valid()) {
             throw new InvalidAuthenticationException('Authentication data invalid/empty');
+        }
 
         $this->authentication = $authentication;
     }
@@ -140,9 +126,10 @@ class GuzzleFetcher implements FetcherInterface
     /**
      * @return string
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidAuthenticationException
+     * @throws RequestFailedException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
     private function getToken(): string
     {
@@ -157,8 +144,9 @@ class GuzzleFetcher implements FetcherInterface
         $expires = carbon($this->getAuthentication()->token_expires);
 
         // If the token expires in the next minute, refresh it.
-        if ($expires->lte(carbon('now')->addMinute()))
+        if ($expires->lte(carbon('now')->addMinute())) {
             $this->refreshToken();
+        }
 
         return $this->getAuthentication()->access_token;
     }
@@ -166,13 +154,13 @@ class GuzzleFetcher implements FetcherInterface
     /**
      * Refresh the Access token that we have in the EsiAccess container.
      *
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws RequestFailedException
+     * @throws InvalidAuthenticationException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
-    private function refreshToken()
+    private function refreshToken(): void
     {
-
         // Make the post request for a new access_token
         try {
 
@@ -199,7 +187,7 @@ class GuzzleFetcher implements FetcherInterface
                 'get -> ' . $this->sso_base . '/token'
             );
 
-            // Grab the body from the StreamInterface intance.
+            // Grab the body from the StreamInterface instance.
             $responseBody = $e->getResponse()->getBody()->getContents();
 
             // For debugging purposes, log the response body
@@ -234,14 +222,11 @@ class GuzzleFetcher implements FetcherInterface
     }
 
     /**
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  array  $headers
-     * @param  array  $body
-     * @return mixed|\Seat\Eseye\Containers\EsiResponse
+     * @param  array<string, mixed>  $headers
+     * @param  array<mixed>  $body
      *
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws RequestFailedException
+     * @throws GuzzleException
      */
     public function httpRequest(
         string $method, string $uri, array $headers = [], array $body = []): EsiResponse
@@ -280,7 +265,7 @@ class GuzzleFetcher implements FetcherInterface
                 implode(' ', $e->getResponse()->getHeader('X-Esi-Error-Limit-Remain')) . ']'
             );
 
-            // Grab the body from the StreamInterface intance.
+            // Grab the body from the StreamInterface instance.
             $responseBody = $e->getResponse()->getBody()->getContents();
 
             // For debugging purposes, log the response body
@@ -313,14 +298,8 @@ class GuzzleFetcher implements FetcherInterface
         );
     }
 
-    /**
-     * @return \GuzzleHttp\Client
-     *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
-     */
     public function getClient(): Client
     {
-
         if (! $this->client)
             $this->client = new Client([
                 'timeout' => 30,
@@ -333,22 +312,13 @@ class GuzzleFetcher implements FetcherInterface
         return $this->client;
     }
 
-    /**
-     * @param  \GuzzleHttp\Client  $client
-     */
-    public function setClient(Client $client)
+    public function setClient(Client $client): void
     {
-
         $this->client = $client;
     }
 
-    /**
-     * @param  string  $uri
-     * @return string
-     */
     public function stripRefreshTokenValue(string $uri): string
     {
-
         // If we have 'refresh_token' in the URI, strip it.
         if (strpos($uri, 'refresh_token'))
             return Uri::withoutQueryValue(new Uri($uri), 'refresh_token')
@@ -358,25 +328,19 @@ class GuzzleFetcher implements FetcherInterface
     }
 
     /**
-     * @param  string  $body
-     * @param  array  $headers
-     * @param  string  $expires
-     * @param  int  $status_code
-     * @return \Seat\Eseye\Containers\EsiResponse
+     * @param  array<string, mixed>  $headers
      */
     public function makeEsiResponse(
         string $body, array $headers, string $expires, int $status_code): EsiResponse
     {
-
         return new EsiResponse($body, $headers, $expires, $status_code);
     }
 
     /**
-     * @return array
+     * @return array<string>
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
     public function getAuthenticationScopes(): array
     {
@@ -399,11 +363,10 @@ class GuzzleFetcher implements FetcherInterface
      * Query the eveseat/resources repository for SDE
      * related information.
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
-    public function setAuthenticationScopes()
+    public function setAuthenticationScopes(): void
     {
 
         $jws_token = $this->verifyToken($this->authentication->access_token);
@@ -414,21 +377,20 @@ class GuzzleFetcher implements FetcherInterface
     /**
      * Verify that an access_token is still valid.
      *
-     * @param  string  $access_token
-     * @return array
+     * @return array<mixed>
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidAuthenticationException
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
-     * @throws \Seat\Eseye\Exceptions\RequestFailedException
-     * @throws \Exception
+     * @throws InvalidContainerDataException
+     * @throws Exception
+     * @throws GuzzleException
      */
-    private function verifyToken(string $access_token)
+    private function verifyToken(string $access_token): array
     {
 
         $sets = $this->getJwkSets();
 
         $jwk_sets = JWKSet::createFromKeyData($sets);
 
+        /** @phpstan-ignore-next-line */
         $jws = Load::jws($access_token)
             ->algs(['RS256', 'ES256', 'HS256'])
             ->exp()
@@ -445,9 +407,10 @@ class GuzzleFetcher implements FetcherInterface
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
     private function getJwkSets(): array
     {
@@ -461,14 +424,17 @@ class GuzzleFetcher implements FetcherInterface
     /**
      * @return string
      *
-     * @throws \Seat\Eseye\Exceptions\InvalidContainerDataException
+     * @throws InvalidContainerDataException
+     * @throws GuzzleException
      */
     private function getJwkUri(): string
     {
-        $oauth_discovery = sprintf('%s://%s:%d/.well-known/oauth-authorization-server',
+        $oauth_discovery = sprintf(
+            '%s://%s:%d/.well-known/oauth-authorization-server',
             Configuration::getInstance()->sso_scheme,
             Configuration::getInstance()->sso_host,
-            Configuration::getInstance()->sso_port);
+            Configuration::getInstance()->sso_port,
+        );
 
         $response = $this->getClient()->get($oauth_discovery);
 
