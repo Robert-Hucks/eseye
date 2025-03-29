@@ -40,7 +40,7 @@ class Configuration
 
     protected LogInterface|null $logger = null;
 
-    protected CacheInterface|null $cache = null;
+    protected CacheInterface|null $cacher = null;
 
     protected EsiConfiguration $configuration;
 
@@ -88,10 +88,10 @@ class Configuration
 
     public function getCache(): CacheInterface
     {
-        if (! $this->cache)
-            $this->cache = new $this->configuration->cache;
+        if (! $this->cacher)
+            $this->cacher = new $this->configuration->cache;
 
-        return $this->cache;
+        return $this->cacher;
     }
 
     /**
